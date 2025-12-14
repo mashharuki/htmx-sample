@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODOアプリ - htmx中級</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .add-todo {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .add-todo input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .add-todo button {
+            padding: 12px 24px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .add-todo button:hover {
+            background-color: #5568d3;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .todo-item:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .todo-delete {
+            padding: 8px 16px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .todo-delete:hover {
+            background-color: #c82333;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ TODOアプリ</h1>
+        <p class="subtitle">CRUD操作の実装例</p>
+        
+        <!-- TODO追加フォーム -->
+        <!-- hx-post: 新しいTODOを作成 -->
+        <!-- hx-target: 結果を#todo-listに追加 -->
+        <!-- hx-swap: 要素の最後に追加 -->
+        <form class="add-todo" hx-post="/api/todos" hx-target="#todo-list" hx-swap="beforeend">
+            <input 
+                type="text" 
+                name="text" 
+                placeholder="新しいTODOを入力..." 
+                required
+                autocomplete="off">
+            <button type="submit">➕ 追加</button>
+        </form>
+        
+        <!-- TODOリスト -->
+        <div id="todo-list">
+            <div class="empty-state">
+                <div class="empty-state-icon">📝</div>
+                <p>TODOがありません</p>
+                <p style="font-size: 14px; color: #bbb;">上のフォームから追加してください</p>
+            </div>
+        </div>
+        
+        <!-- 統計情報 -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">合計</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="active-count">0</div>
+                <div class="stat-label">未完了</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completed-count">0</div>
+                <div class="stat-label">完了</div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>💡 このサンプルで学べること</h3>
+            <ul>
+                <li><strong>CRUD操作</strong>: Create（追加）、Read（読み込み）、Update（更新）、Delete（削除）</li>
+                <li><strong>hx-swap="beforeend"</strong>: 要素の最後に追加</li>
+                <li><strong>hx-delete</strong>: DELETEリクエスト</li>
+                <li><strong>hx-put</strong>: PUTリクエスト（更新）</li>
+                <li><strong>動的なUI更新</strong>: ページをリロードせずにリストを操作</li>
+            </ul>
+            
+            <h3>🔍 試してみよう</h3>
+            <ul>
+                <li>TODOを追加して、リストが更新されることを確認</li>
+                <li>チェックボックスで完了状態を切り替え</li>
+                <li>削除ボタンでTODOを削除</li>
+                <li>開発者ツールで各操作のHTTPメソッドを確認</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- モックAPIサーバー（学習用） -->
+    <script>
+        // TODOデータを保持
+        let todos = [];
+        let nextId = 1;
+        
+        // 統計を更新する関数
+        function updateStats() {
+            const total = todos.length;
+            const completed = todos.filter(t => t.completed).length;
+            const active = total - completed;
+            
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('active-count').textContent = active;
+            document.getElementById('completed-count').textContent = completed;
+        }
+        
+        // TODOアイテムのHTMLを生成
+        function createTodoHtml(todo) {
+            return `
+                <div class="todo-item ${todo.completed ? 'completed' : ''}" id="todo-${todo.id}">
+                    <input 
+                        type="checkbox" 
+                        class="todo-checkbox"
+                        ${todo.completed ? 'checked' : ''}
+                        hx-put="/api/todos/${todo.id}/toggle"
+                        hx-target="#todo-${todo.id}"
+                        hx-swap="outerHTML">
+                    <span class="todo-text">${todo.text}</span>
+                    <button 
+                        class="todo-delete"
+                        hx-delete="/api/todos/${todo.id}"
+                        hx-target="#todo-${todo.id}"
+                        hx-swap="outerHTML"
+                        hx-confirm="本当に削除しますか？">
+                        🗑️ 削除
+                    </button>
+                </div>
+            `;
+        }
+        
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.preventDefault();
+            const url = new URL(event.detail.path, window.location.href);
+            const path = url.pathname;
+            const method = event.detail.verb.toUpperCase();
+            let response = '';
+            
+            // POST: TODO追加
+            if (method === 'POST' && path === '/api/todos') {
+                const text = event.detail.parameters.text;
+                const todo = { id: nextId++, text, completed: false };
+                todos.push(todo);
+                response = createTodoHtml(todo);
+                
+                // フォームをリセット
+                setTimeout(() => {
+                    document.querySelector('.add-todo input').value = '';
+                }, 100);
+            }
+            // PUT: TODO完了状態切り替え
+            else if (method === 'PUT' && path.includes('/toggle')) {
+                const id = parseInt(path.match(/\/todos\/(\d+)/)[1]);
+                const todo = todos.find(t => t.id === id);
+                if (todo) {
+                    todo.completed = !todo.completed;
+                    response = createTodoHtml(todo);
+                }
+            }
+            // DELETE: TODO削除
+            else if (method === 'DELETE' && path.includes('/todos/')) {
+                const id = parseInt(path.match(/\/todos\/(\d+)/)[1]);
+                todos = todos.filter(t => t.id !== id);
+                response = ''; // 削除時は空を返す（要素が消える）
+            }
+            
+            // レスポンスを返す
+            setTimeout(() => {
+                event.detail.xhr.addEventListener('load', function() {
+                    Object.defineProperty(this, 'response', { value: response });
+                    Object.defineProperty(this, 'responseText', { value: response });
+                });
+                event.detail.xhr.dispatchEvent(new Event('load'));
+                
+                // 統計を更新
+                updateStats();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

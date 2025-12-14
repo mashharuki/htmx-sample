@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアルタイム検索 - htmx入門</title>
+    <!-- htmxライブラリを読み込み -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .search-box {
+            position: relative;
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .loading {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+        .htmx-request .loading {
+            display: block;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .result-item {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+        .result-item:hover {
+            transform: translateX(5px);
+            background-color: #e9ecef;
+        }
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .result-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e7ffe7;
+            border-left: 4px solid #28a745;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 リアルタイム検索</h1>
+        <p style="text-align: center; color: #666;">入力するとすぐに検索結果が表示されます</p>
+        
+        <div class="search-box">
+            <!-- 検索入力欄 -->
+            <!-- hx-get: 検索APIのURL -->
+            <!-- hx-trigger: キーボード入力時にトリガー -->
+            <!--   - keyup: キーを離したときに発火 -->
+            <!--   - changed: 値が変更されたときだけ発火 -->
+            <!--   - delay:500ms: 入力が止まって500ms後に発火（連続入力時の無駄なリクエストを防ぐ） -->
+            <!-- hx-target: 検索結果を#resultsに表示 -->
+            <!-- hx-include: 検索クエリとして送信する値 -->
+            <input 
+                type="text" 
+                name="q"
+                placeholder="検索キーワードを入力..."
+                hx-get="/api/search"
+                hx-trigger="keyup changed delay:500ms"
+                hx-target="#results"
+                hx-indicator=".loading">
+            <span class="loading">🔄 検索中...</span>
+        </div>
+        
+        <!-- 検索結果表示エリア -->
+        <div id="results">
+            <div class="no-results">
+                👆 検索キーワードを入力してください
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>💡 このサンプルで学べること</h3>
+            <ul>
+                <li><strong>hx-trigger</strong>: イベントの詳細な制御</li>
+                <li><strong>delay</strong>: 入力が止まるまで待つ（デバウンス）</li>
+                <li><strong>changed</strong>: 値が変更されたときだけ発火</li>
+                <li><strong>hx-indicator</strong>: ローディング表示</li>
+            </ul>
+            
+            <h3>📝 動作の流れ</h3>
+            <ol>
+                <li>ユーザーが検索ボックスに入力</li>
+                <li>キーを離して500ms経過（入力が止まるのを待つ）</li>
+                <li>htmxが検索クエリを送信</li>
+                <li>サーバーが検索結果（HTML）を返す</li>
+                <li>htmxが#resultsを更新</li>
+            </ol>
+            
+            <h3>🔍 試してみよう</h3>
+            <ul>
+                <li>「htmx」「javascript」「web」などのキーワードを入力</li>
+                <li>高速に入力しても、無駄なリクエストが送られないことを確認</li>
+                <li>開発者ツールでリクエストのタイミングを観察</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- モックAPIサーバー（学習用） -->
+    <script>
+        // サンプル検索データ
+        const searchData = [
+            { title: 'htmxとは', desc: 'htmxは、HTMLの属性を使ってAJAXを簡単に実装できるライブラリです。' },
+            { title: 'htmxの基本', desc: 'hx-get、hx-post、hx-targetなどの基本的な属性について学びます。' },
+            { title: 'JavaScriptとの違い', desc: 'htmxを使うことで、JavaScriptの記述量を大幅に削減できます。' },
+            { title: 'Webアプリケーション開発', desc: 'モダンなWebアプリケーションを効率的に開発する方法。' },
+            { title: 'フロントエンド技術', desc: 'HTML、CSS、JavaScriptなどのフロントエンド技術の基礎。' },
+            { title: 'サーバーサイド連携', desc: 'htmxはどんなバックエンド言語とも組み合わせ可能です。' },
+        ];
+        
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            const path = new URL(event.detail.path, window.location.href).pathname;
+            
+            if (path === '/api/search') {
+                event.preventDefault();
+                
+                // 検索クエリを取得
+                const query = event.detail.parameters.q || '';
+                
+                let response;
+                
+                if (!query) {
+                    // クエリが空の場合
+                    response = `
+                        <div class="no-results">
+                            👆 検索キーワードを入力してください
+                        </div>
+                    `;
+                } else {
+                    // 検索実行
+                    const results = searchData.filter(item => 
+                        item.title.toLowerCase().includes(query.toLowerCase()) ||
+                        item.desc.toLowerCase().includes(query.toLowerCase())
+                    );
+                    
+                    if (results.length === 0) {
+                        response = `
+                            <div class="no-results">
+                                😢 「${query}」に一致する結果が見つかりませんでした
+                            </div>
+                        `;
+                    } else {
+                        response = results.map(item => `
+                            <div class="result-item">
+                                <div class="result-title">${item.title}</div>
+                                <div class="result-desc">${item.desc}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                // 実際のAPIのような遅延をシミュレート
+                setTimeout(() => {
+                    event.detail.xhr.addEventListener('load', function() {
+                        Object.defineProperty(this, 'response', { value: response });
+                        Object.defineProperty(this, 'responseText', { value: response });
+                    });
+                    
+                    // リクエスト完了イベントを発火
+                    event.detail.xhr.dispatchEvent(new Event('load'));
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>
