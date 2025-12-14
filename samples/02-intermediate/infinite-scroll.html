@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無限スクロール - htmx中級</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .article-card {
+            padding: 20px;
+            margin: 15px 0;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .article-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .article-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .article-meta {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        .article-excerpt {
+            color: #666;
+            line-height: 1.6;
+        }
+        .loading-indicator {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 18px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .scroll-trigger {
+            height: 1px;
+        }
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e7ffe7;
+            border-left: 4px solid #28a745;
+            border-radius: 5px;
+        }
+        .page-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-indicator">ページ: <span id="current-page">1</span></div>
+    
+    <div class="container">
+        <h1>📜 無限スクロール</h1>
+        <p class="subtitle">スクロールで自動的にコンテンツを読み込み</p>
+        
+        <!-- 記事リスト -->
+        <div id="article-list">
+            <!-- 初期記事はここに表示される -->
+        </div>
+        
+        <!-- スクロールトリガー -->
+        <!-- revealed: 要素が画面に表示されたときに発火 -->
+        <!-- once: 一度だけ発火 -->
+        <div 
+            class="scroll-trigger"
+            hx-get="/api/articles?page=2"
+            hx-trigger="revealed"
+            hx-swap="afterend">
+        </div>
+    </div>
+    
+    <div class="container" style="margin-top: 20px;">
+        <div class="explanation">
+            <h3>💡 このサンプルで学べること</h3>
+            <ul>
+                <li><strong>hx-trigger="revealed"</strong>: 要素が表示されたときに発火</li>
+                <li><strong>無限スクロール</strong>: スクロールで自動的にコンテンツを追加</li>
+                <li><strong>hx-swap="afterend"</strong>: 要素の後に追加</li>
+                <li><strong>パフォーマンス</strong>: 必要なときだけデータを読み込む</li>
+            </ul>
+            
+            <h3>📝 動作の流れ</h3>
+            <ol>
+                <li>ユーザーがページをスクロール</li>
+                <li>トリガー要素が画面に表示される</li>
+                <li>htmxが次のページのデータをリクエスト</li>
+                <li>サーバーが記事データ（HTML）を返す</li>
+                <li>htmxがリストに記事を追加</li>
+                <li>新しいトリガー要素も一緒に追加される</li>
+            </ol>
+            
+            <h3>🔍 試してみよう</h3>
+            <ul>
+                <li>ページをスクロールして、自動的に記事が追加されることを確認</li>
+                <li>開発者ツールでリクエストのタイミングを観察</li>
+                <li>画面に表示されたときだけリクエストが送られることを確認</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let maxPage = 5; // サンプルでは5ページまで
+        
+        // ページインジケータを更新
+        function updatePageIndicator() {
+            document.getElementById('current-page').textContent = currentPage;
+        }
+        
+        // 記事データを生成
+        function generateArticles(page) {
+            const articles = [];
+            for (let i = 1; i <= 5; i++) {
+                const articleNum = (page - 1) * 5 + i;
+                articles.push({
+                    id: articleNum,
+                    title: `記事タイトル ${articleNum}`,
+                    author: ['山田太郎', '佐藤花子', '鈴木一郎', '田中美咲'][Math.floor(Math.random() * 4)],
+                    date: new Date(2024, 0, articleNum).toLocaleDateString('ja-JP'),
+                    excerpt: `これは記事 ${articleNum} の抜粋です。htmxを使った無限スクロールのデモンストレーションとして、スクロールすると自動的に次のコンテンツが読み込まれます。ページをリロードすることなく、シームレスにコンテンツを閲覧できます。`
+                });
+            }
+            return articles;
+        }
+        
+        // 記事HTMLを生成
+        function createArticlesHtml(page) {
+            const articles = generateArticles(page);
+            let html = '';
+            
+            articles.forEach(article => {
+                html += `
+                    <div class="article-card">
+                        <div class="article-title">${article.title}</div>
+                        <div class="article-meta">
+                            👤 ${article.author} | 📅 ${article.date}
+                        </div>
+                        <div class="article-excerpt">${article.excerpt}</div>
+                    </div>
+                `;
+            });
+            
+            // 次のページがある場合、新しいトリガーを追加
+            if (page < maxPage) {
+                html += `
+                    <div class="loading-indicator">
+                        <div class="loading-spinner"></div>
+                        <div>さらに読み込み中...</div>
+                    </div>
+                    <div 
+                        class="scroll-trigger"
+                        hx-get="/api/articles?page=${page + 1}"
+                        hx-trigger="revealed"
+                        hx-swap="afterend">
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="loading-indicator">
+                        🎉 すべての記事を読み込みました
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+        
+        // 初期記事を読み込み
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('article-list').innerHTML = createArticlesHtml(1);
+        });
+        
+        // モックAPIサーバー
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.preventDefault();
+            const url = new URL(event.detail.path, window.location.href);
+            const page = parseInt(url.searchParams.get('page')) || 1;
+            
+            // APIレスポンスをシミュレート（少し遅延を入れる）
+            setTimeout(() => {
+                const response = createArticlesHtml(page);
+                currentPage = page;
+                updatePageIndicator();
+                
+                event.detail.xhr.addEventListener('load', function() {
+                    Object.defineProperty(this, 'response', { value: response });
+                    Object.defineProperty(this, 'responseText', { value: response });
+                });
+                event.detail.xhr.dispatchEvent(new Event('load'));
+            }, 800);
+        });
+    </script>
+</body>
+</html>

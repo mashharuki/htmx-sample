@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タブ切り替え - htmx中級</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .tab:hover {
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        .tab.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #007bff;
+        }
+        #tab-content {
+            min-height: 300px;
+            padding: 20px;
+        }
+        .content-section {
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .content-header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .content-text {
+            color: #666;
+            line-height: 1.8;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px;
+            margin: 8px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .code-example {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📑 タブ切り替え</h1>
+        <p style="text-align: center; color: #666;">コンテンツの動的な切り替え</p>
+        
+        <!-- タブボタン -->
+        <div class="tabs">
+            <!-- 各タブはクリック時に対応するコンテンツを読み込む -->
+            <!-- hx-get: コンテンツを取得するURL -->
+            <!-- hx-target: コンテンツを表示する場所 -->
+            <!-- hx-swap: 表示方法（innerHTML = 中身を置き換え） -->
+            <button 
+                class="tab active" 
+                hx-get="/api/tabs/overview"
+                hx-target="#tab-content"
+                hx-swap="innerHTML"
+                onclick="setActiveTab(this)">
+                概要
+            </button>
+            <button 
+                class="tab" 
+                hx-get="/api/tabs/features"
+                hx-target="#tab-content"
+                hx-swap="innerHTML"
+                onclick="setActiveTab(this)">
+                機能
+            </button>
+            <button 
+                class="tab" 
+                hx-get="/api/tabs/examples"
+                hx-target="#tab-content"
+                hx-swap="innerHTML"
+                onclick="setActiveTab(this)">
+                サンプルコード
+            </button>
+            <button 
+                class="tab" 
+                hx-get="/api/tabs/resources"
+                hx-target="#tab-content"
+                hx-swap="innerHTML"
+                onclick="setActiveTab(this)">
+                リソース
+            </button>
+        </div>
+        
+        <!-- コンテンツ表示エリア -->
+        <div id="tab-content">
+            <div class="content-section">
+                <div class="content-header">🎯 htmxの概要</div>
+                <div class="content-text">
+                    <p>
+                        htmxは、HTMLの属性を使って最新のブラウザ機能に直接アクセスできる、
+                        小さくて依存関係のないライブラリです。
+                    </p>
+                    <p>
+                        JavaScriptを書くことなく、AJAXリクエスト、CSS Transitions、
+                        WebSocketsなどを、HTMLの属性だけで利用できます。
+                    </p>
+                    <p>
+                        htmxを使うことで、シンプルで強力なハイパーメディアシステムを
+                        構築でき、開発者体験とエンドユーザー体験の両方を向上させることができます。
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>💡 このサンプルで学べること</h3>
+            <ul>
+                <li><strong>コンテンツの切り替え</strong>: クリックで異なるコンテンツを読み込む</li>
+                <li><strong>hx-target</strong>: 特定の要素だけを更新</li>
+                <li><strong>複数のトリガー</strong>: 異なるボタンで異なるコンテンツを表示</li>
+                <li><strong>SPA風のUI</strong>: ページ全体をリロードせずに部分更新</li>
+            </ul>
+            
+            <h3>🔍 試してみよう</h3>
+            <ul>
+                <li>各タブをクリックして、コンテンツが切り替わることを確認</li>
+                <li>開発者ツールで、ページ全体ではなく一部だけが更新されることを確認</li>
+                <li>Networkタブで、必要なコンテンツだけがリクエストされることを確認</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // タブのアクティブ状態を管理
+        function setActiveTab(clickedTab) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            clickedTab.classList.add('active');
+        }
+        
+        // タブコンテンツのモックデータ
+        const tabContents = {
+            overview: `
+                <div class="content-section">
+                    <div class="content-header">🎯 htmxの概要</div>
+                    <div class="content-text">
+                        <p>
+                            htmxは、HTMLの属性を使って最新のブラウザ機能に直接アクセスできる、
+                            小さくて依存関係のないライブラリです。
+                        </p>
+                        <p>
+                            JavaScriptを書くことなく、AJAXリクエスト、CSS Transitions、
+                            WebSocketsなどを、HTMLの属性だけで利用できます。
+                        </p>
+                        <p>
+                            htmxを使うことで、シンプルで強力なハイパーメディアシステムを
+                            構築でき、開発者体験とエンドユーザー体験の両方を向上させることができます。
+                        </p>
+                    </div>
+                </div>
+            `,
+            features: `
+                <div class="content-section">
+                    <div class="content-header">✨ 主な機能</div>
+                    <ul class="feature-list">
+                        <li><strong>AJAX</strong> - どんな要素からでもAJAXリクエストを送信可能</li>
+                        <li><strong>CSS Transitions</strong> - スムーズなアニメーション効果</li>
+                        <li><strong>WebSockets & SSE</strong> - リアルタイム通信のサポート</li>
+                        <li><strong>History Support</strong> - ブラウザ履歴との統合</li>
+                        <li><strong>Polling & Lazy Loading</strong> - 自動更新と遅延読み込み</li>
+                        <li><strong>Extensions</strong> - 拡張機能で機能を追加可能</li>
+                    </ul>
+                </div>
+            `,
+            examples: `
+                <div class="content-section">
+                    <div class="content-header">💻 サンプルコード</div>
+                    <div class="content-text">
+                        <h4>基本的なGETリクエスト</h4>
+                        <div class="code-example">
+&lt;button hx-get="/api/data" hx-target="#result"&gt;
+  データを読み込む
+&lt;/button&gt;
+&lt;div id="result"&gt;&lt;/div&gt;
+                        </div>
+                        
+                        <h4>フォーム送信</h4>
+                        <div class="code-example">
+&lt;form hx-post="/api/submit" hx-target="#response"&gt;
+  &lt;input name="name" type="text"&gt;
+  &lt;button type="submit"&gt;送信&lt;/button&gt;
+&lt;/form&gt;
+&lt;div id="response"&gt;&lt;/div&gt;
+                        </div>
+                        
+                        <h4>リアルタイム検索</h4>
+                        <div class="code-example">
+&lt;input type="text" 
+  hx-get="/api/search"
+  hx-trigger="keyup changed delay:500ms"
+  hx-target="#results"&gt;
+                        </div>
+                    </div>
+                </div>
+            `,
+            resources: `
+                <div class="content-section">
+                    <div class="content-header">📚 学習リソース</div>
+                    <div class="content-text">
+                        <h4>公式リソース</h4>
+                        <ul class="feature-list">
+                            <li><a href="https://htmx.org/" target="_blank">htmx公式サイト</a> - 公式ドキュメント</li>
+                            <li><a href="https://htmx.org/docs/" target="_blank">ドキュメント</a> - 詳細なAPI仕様</li>
+                            <li><a href="https://htmx.org/examples/" target="_blank">サンプル集</a> - 実用的な例</li>
+                        </ul>
+                        
+                        <h4>コミュニティ</h4>
+                        <ul class="feature-list">
+                            <li><a href="https://github.com/bigskysoftware/htmx" target="_blank">GitHub</a> - ソースコード</li>
+                            <li><a href="https://htmx.org/discord" target="_blank">Discord</a> - コミュニティチャット</li>
+                        </ul>
+                    </div>
+                </div>
+            `
+        };
+        
+        // モックAPIサーバー
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.preventDefault();
+            const path = new URL(event.detail.path, window.location.href).pathname;
+            const match = path.match(/\/api\/tabs\/(\w+)/);
+            
+            if (match) {
+                const tabName = match[1];
+                const response = tabContents[tabName] || '<p>コンテンツが見つかりません</p>';
+                
+                setTimeout(() => {
+                    event.detail.xhr.addEventListener('load', function() {
+                        Object.defineProperty(this, 'response', { value: response });
+                        Object.defineProperty(this, 'responseText', { value: response });
+                    });
+                    event.detail.xhr.dispatchEvent(new Event('load'));
+                }, 200);
+            }
+        });
+    </script>
+</body>
+</html>

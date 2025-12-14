@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フォームバリデーション - htmx応用</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        input.error {
+            border-color: #dc3545;
+        }
+        input.success {
+            border-color: #28a745;
+        }
+        .validation-message {
+            margin-top: 8px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        .error-message {
+            color: #dc3545;
+        }
+        .success-message {
+            color: #28a745;
+        }
+        .info-message {
+            color: #666;
+            font-size: 13px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #667eea;
+            color: white;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #5568d3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .success-banner {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ フォームバリデーション</h1>
+        <p class="subtitle">リアルタイムで入力をチェック</p>
+        
+        <div id="form-response"></div>
+        
+        <form id="signup-form">
+            <!-- ユーザー名 -->
+            <div class="form-group">
+                <label for="username">ユーザー名 *</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username"
+                    autocomplete="off"
+                    hx-post="/api/validate/username"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-target="#username-validation"
+                    required>
+                <div id="username-validation" class="validation-message">
+                    <span class="info-message">3文字以上、英数字のみ</span>
+                </div>
+            </div>
+            
+            <!-- メールアドレス -->
+            <div class="form-group">
+                <label for="email">メールアドレス *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email"
+                    hx-post="/api/validate/email"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-target="#email-validation"
+                    required>
+                <div id="email-validation" class="validation-message">
+                    <span class="info-message">有効なメールアドレスを入力</span>
+                </div>
+            </div>
+            
+            <!-- パスワード -->
+            <div class="form-group">
+                <label for="password">パスワード *</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password"
+                    hx-post="/api/validate/password"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-target="#password-validation"
+                    required>
+                <div id="password-validation" class="validation-message">
+                    <span class="info-message">8文字以上、大文字・小文字・数字を含む</span>
+                </div>
+            </div>
+            
+            <!-- パスワード確認 -->
+            <div class="form-group">
+                <label for="password-confirm">パスワード（確認） *</label>
+                <input 
+                    type="password" 
+                    id="password-confirm" 
+                    name="password_confirm"
+                    hx-post="/api/validate/password-confirm"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-target="#password-confirm-validation"
+                    required>
+                <div id="password-confirm-validation" class="validation-message">
+                    <span class="info-message">パスワードを再入力</span>
+                </div>
+            </div>
+            
+            <button 
+                type="submit"
+                hx-post="/api/submit"
+                hx-target="#form-response"
+                hx-swap="innerHTML">
+                登録する
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // 使用済みユーザー名（モックデータ）
+        const takenUsernames = ['admin', 'test', 'user', 'demo'];
+        
+        // バリデーション結果を保存
+        const validationState = {
+            username: false,
+            email: false,
+            password: false,
+            passwordConfirm: false
+        };
+        
+        // バリデーション関数
+        function validateUsername(username) {
+            if (!username) {
+                return { valid: false, message: '' };
+            }
+            if (username.length < 3) {
+                return { valid: false, message: '❌ ユーザー名は3文字以上必要です' };
+            }
+            if (!/^[a-zA-Z0-9]+$/.test(username)) {
+                return { valid: false, message: '❌ 英数字のみ使用できます' };
+            }
+            if (takenUsernames.includes(username.toLowerCase())) {
+                return { valid: false, message: '❌ このユーザー名は既に使用されています' };
+            }
+            return { valid: true, message: '✅ 使用可能なユーザー名です' };
+        }
+        
+        function validateEmail(email) {
+            if (!email) {
+                return { valid: false, message: '' };
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return { valid: false, message: '❌ 有効なメールアドレスを入力してください' };
+            }
+            return { valid: true, message: '✅ 有効なメールアドレスです' };
+        }
+        
+        function validatePassword(password) {
+            if (!password) {
+                return { valid: false, message: '' };
+            }
+            if (password.length < 8) {
+                return { valid: false, message: '❌ パスワードは8文字以上必要です' };
+            }
+            if (!/[A-Z]/.test(password)) {
+                return { valid: false, message: '❌ 大文字を含める必要があります' };
+            }
+            if (!/[a-z]/.test(password)) {
+                return { valid: false, message: '❌ 小文字を含める必要があります' };
+            }
+            if (!/[0-9]/.test(password)) {
+                return { valid: false, message: '❌ 数字を含める必要があります' };
+            }
+            return { valid: true, message: '✅ 強固なパスワードです' };
+        }
+        
+        function validatePasswordConfirm(password, confirm) {
+            if (!confirm) {
+                return { valid: false, message: '' };
+            }
+            if (password !== confirm) {
+                return { valid: false, message: '❌ パスワードが一致しません' };
+            }
+            return { valid: true, message: '✅ パスワードが一致しています' };
+        }
+        
+        // バリデーションメッセージのHTMLを生成
+        function createValidationHtml(result, inputId) {
+            const messageClass = result.valid ? 'success-message' : 'error-message';
+            const inputClass = result.valid ? 'success' : (result.message ? 'error' : '');
+            
+            // 入力欄のクラスを更新
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.className = inputClass;
+            }
+            
+            return `<span class="${messageClass}">${result.message}</span>`;
+        }
+        
+        // モックAPIサーバー
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.preventDefault();
+            const url = new URL(event.detail.path, window.location.href);
+            const path = url.pathname;
+            let response = '';
+            
+            if (path === '/api/validate/username') {
+                const username = event.detail.parameters.username;
+                const result = validateUsername(username);
+                validationState.username = result.valid;
+                response = createValidationHtml(result, 'username');
+            }
+            else if (path === '/api/validate/email') {
+                const email = event.detail.parameters.email;
+                const result = validateEmail(email);
+                validationState.email = result.valid;
+                response = createValidationHtml(result, 'email');
+            }
+            else if (path === '/api/validate/password') {
+                const password = event.detail.parameters.password;
+                const result = validatePassword(password);
+                validationState.password = result.valid;
+                response = createValidationHtml(result, 'password');
+            }
+            else if (path === '/api/validate/password-confirm') {
+                const password = document.getElementById('password').value;
+                const confirm = event.detail.parameters.password_confirm;
+                const result = validatePasswordConfirm(password, confirm);
+                validationState.passwordConfirm = result.valid;
+                response = createValidationHtml(result, 'password-confirm');
+            }
+            else if (path === '/api/submit') {
+                // すべてのバリデーションが通っているかチェック
+                const allValid = Object.values(validationState).every(v => v);
+                
+                if (allValid) {
+                    response = `
+                        <div class="success-banner">
+                            <h2>🎉 登録完了！</h2>
+                            <p>ユーザー名: ${event.detail.parameters.username}</p>
+                            <p>メールアドレス: ${event.detail.parameters.email}</p>
+                            <p>アカウントが正常に作成されました。</p>
+                        </div>
+                    `;
+                    
+                    // フォームをリセット
+                    setTimeout(() => {
+                        document.getElementById('signup-form').reset();
+                        document.querySelectorAll('input').forEach(input => {
+                            input.className = '';
+                        });
+                    }, 2000);
+                } else {
+                    response = `
+                        <div class="error-message" style="text-align: center; padding: 15px;">
+                            ❌ すべての項目を正しく入力してください
+                        </div>
+                    `;
+                }
+            }
+            
+            setTimeout(() => {
+                event.detail.xhr.addEventListener('load', function() {
+                    Object.defineProperty(this, 'response', { value: response });
+                    Object.defineProperty(this, 'responseText', { value: response });
+                });
+                event.detail.xhr.dispatchEvent(new Event('load'));
+            }, 200);
+        });
+    </script>
+</body>
+</html>

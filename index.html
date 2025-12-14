@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>htmx サンプル一覧</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 20px;
+            opacity: 0.9;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-description {
+            color: white;
+            opacity: 0.9;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            background-color: #e7f3ff;
+            color: #007bff;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .docs-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .docs-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .docs-section p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .docs-link {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .docs-link:hover {
+            background-color: #5568d3;
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 htmx サンプル集</h1>
+            <p>段階的に学べる実践的なサンプルアプリケーション</p>
+        </div>
+
+        <!-- 基本編 -->
+        <div class="section">
+            <div class="section-title">
+                🌱 01. 基本編
+            </div>
+            <div class="section-description">
+                htmxの核となる機能を学ぶ、初心者向けのサンプルです。
+            </div>
+            <div class="cards">
+                <a href="samples/01-basic/counter.html" class="card">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">カウンターアプリ</div>
+                    <div class="card-description">
+                        ボタンをクリックして数字を増減させる基本的なアプリ。
+                        hx-get、hx-target、hx-swapの使い方を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">hx-get</span>
+                        <span class="tag">hx-target</span>
+                        <span class="tag">hx-swap</span>
+                    </div>
+                </a>
+
+                <a href="samples/01-basic/form.html" class="card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-title">フォーム送信</div>
+                    <div class="card-description">
+                        ページをリロードせずにフォームを送信。
+                        hx-postとフォームデータの扱い方を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">hx-post</span>
+                        <span class="tag">フォーム</span>
+                        <span class="tag">非同期送信</span>
+                    </div>
+                </a>
+
+                <a href="samples/01-basic/search.html" class="card">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">リアルタイム検索</div>
+                    <div class="card-description">
+                        入力に応じて即座に検索結果を表示。
+                        hx-triggerとデバウンスの使い方を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">hx-trigger</span>
+                        <span class="tag">delay</span>
+                        <span class="tag">changed</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 中級編 -->
+        <div class="section">
+            <div class="section-title">
+                🌿 02. 中級編
+            </div>
+            <div class="section-description">
+                より実践的なアプリケーションを通じて、htmxの活用方法を学びます。
+            </div>
+            <div class="cards">
+                <a href="samples/02-intermediate/todo.html" class="card">
+                    <div class="card-icon">✅</div>
+                    <div class="card-title">TODOアプリ</div>
+                    <div class="card-description">
+                        追加・更新・削除を実装したTODO管理アプリ。
+                        CRUD操作の基本を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">CRUD</span>
+                        <span class="tag">hx-delete</span>
+                        <span class="tag">hx-put</span>
+                    </div>
+                </a>
+
+                <a href="samples/02-intermediate/tabs.html" class="card">
+                    <div class="card-icon">📑</div>
+                    <div class="card-title">タブ切り替え</div>
+                    <div class="card-description">
+                        クリックで異なるコンテンツを動的に切り替え。
+                        SPA風のUIの実装方法を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">コンテンツ切り替え</span>
+                        <span class="tag">SPA</span>
+                    </div>
+                </a>
+
+                <a href="samples/02-intermediate/infinite-scroll.html" class="card">
+                    <div class="card-icon">📜</div>
+                    <div class="card-title">無限スクロール</div>
+                    <div class="card-description">
+                        スクロールで自動的にコンテンツを読み込む。
+                        hx-trigger="revealed"の活用方法を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">revealed</span>
+                        <span class="tag">スクロール</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 応用編 -->
+        <div class="section">
+            <div class="section-title">
+                🌳 03. 応用編
+            </div>
+            <div class="section-description">
+                高度な機能を組み合わせた、実践的なサンプルです。
+            </div>
+            <div class="cards">
+                <a href="samples/03-advanced/validation.html" class="card">
+                    <div class="card-icon">✅</div>
+                    <div class="card-title">フォームバリデーション</div>
+                    <div class="card-description">
+                        リアルタイムで入力内容をチェック。
+                        ユーザーフレンドリーなバリデーションを学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">バリデーション</span>
+                        <span class="tag">リアルタイム</span>
+                    </div>
+                </a>
+
+                <a href="samples/03-advanced/polling.html" class="card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">ポーリング</div>
+                    <div class="card-description">
+                        ダッシュボードを定期的に自動更新。
+                        リアルタイムモニタリングの実装を学べます。
+                    </div>
+                    <div class="card-tags">
+                        <span class="tag">every</span>
+                        <span class="tag">自動更新</span>
+                        <span class="tag">ポーリング</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- ドキュメント -->
+        <div class="docs-section">
+            <h2>📚 学習ドキュメント</h2>
+            <p>
+                htmxの基本概念から実践的な使い方まで、詳しく解説したドキュメントを用意しています。
+                サンプルを試す前に、まずはドキュメントを読んで全体像を把握することをお勧めします。
+            </p>
+            <p>
+                <strong>ドキュメントの内容：</strong>
+            </p>
+            <ul style="color: #666; line-height: 2; margin-left: 20px;">
+                <li>htmxとは何か、なぜ使うのか</li>
+                <li>主要な属性（hx-get、hx-post、hx-targetなど）の詳細説明</li>
+                <li>効果的な学習の進め方</li>
+                <li>よくある質問とトラブルシューティング</li>
+            </ul>
+            <a href="docs/ONBOARDING.md" class="docs-link">📖 オンボーディングガイドを読む</a>
+        </div>
+
+        <div class="footer">
+            <p>🎉 Happy learning with htmx!</p>
+            <p style="margin-top: 10px; font-size: 14px;">
+                このサンプルを通じて、htmxの魅力を感じていただければ幸いです
+            </p>
+        </div>
+    </div>
+</body>
+</html>
