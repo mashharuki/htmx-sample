@@ -92,14 +92,22 @@ http://localhost:8000 にアクセスして、サンプルファイルを開い�
 
 ## 📖 ドキュメント
 
-詳しい説明は [`docs/ONBOARDING.md`](docs/ONBOARDING.md) を参照してください。
+このリポジトリには以下のドキュメントが用意されています：
 
-以下の内容が含まれています：
+### [`docs/ONBOARDING.md`](docs/ONBOARDING.md) - オンボーディングガイド
+詳しい学習ガイドです。以下の内容が含まれています：
 - htmxの基本概念
 - 主要な属性の詳細説明
 - 学習の進め方
 - よくある質問
 - トラブルシューティング
+
+### [`docs/QUICK_REFERENCE.md`](docs/QUICK_REFERENCE.md) - クイックリファレンス
+よく使う属性とパターンの早見表です：
+- 全ての主要な属性の一覧
+- hx-swap、hx-triggerの値の説明
+- 実践的なコードパターン集
+- デバッグのTips
 
 ## 🎓 学習の進め方
 
