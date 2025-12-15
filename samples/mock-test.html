@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMX Mock Test</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <!-- モック用のボタン -->
+    <button 
+      hx-get="/mock-endpoint" 
+      hx-target="#result"
+    >
+      Load Mock Data
+    </button>
+    <!-- データをここに表示 -->
+    <div id="result"></div>
+
+    <!-- モックAPIサーバー -->
+    <script>
+        document.body.addEventListener('htmx:beforeSend', function(evt) {
+            console.log('htmx:beforeSend', evt.detail);
+            const path = evt.detail.requestConfig.path;
+            // /mock-endpoinエンドポイントへのリクエストをモック
+            if (path === '/mock-endpoint') {
+                const xhr = evt.detail.xhr;
+                
+                // Mock the send method
+                const originalSend = xhr.send;
+                xhr.send = function() {
+                    console.log('Mocking request to ' + path);
+                    
+                    // Simulate async network delay
+                    setTimeout(() => {
+                        // Mock response properties
+                        Object.defineProperty(xhr, 'status', { value: 200 });
+                        Object.defineProperty(xhr, 'responseText', { value: '<p>This is mocked content!</p>' });
+                        Object.defineProperty(xhr, 'response', { value: '<p>This is mocked content!</p>' });
+                        
+                        // Mock getResponseHeader
+                        xhr.getResponseHeader = function(header) {
+                            if (header.toLowerCase() === 'content-type') return 'text/html';
+                            return null;
+                        };
+                        
+                        // Trigger load event
+                        xhr.dispatchEvent(new Event('load'));
+                        // Also call onload if it exists (HTMX uses onload)
+                        // if (xhr.onload) xhr.onload(); 
+                        // Note: dispatchEvent('load') should trigger onload handler if attached via addEventListener or .onload
+                    }, 100);
+                };
+            }
+        });
+    </script>
+</body>
+</html>

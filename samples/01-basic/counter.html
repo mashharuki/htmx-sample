@@ -151,10 +151,8 @@
         
         // モックAPIエンドポイントを設定
         // htmxのリクエストをインターセプトして、レスポンスを返す
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.preventDefault();
-            
-            const path = new URL(event.detail.path, window.location.href).pathname;
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            const path = new URL(event.detail.requestConfig.path, window.location.href).pathname;
             let response;
             
             // パスに応じて処理を分岐
@@ -170,10 +168,16 @@
             }
             
             // レスポンスを返す
-            event.detail.xhr.addEventListener('load', function() {
-                Object.defineProperty(this, 'response', { value: response });
-                Object.defineProperty(this, 'responseText', { value: response });
-            });
+            if (response !== undefined) {
+                event.detail.xhr.send = function() {
+                    setTimeout(() => {
+                        Object.defineProperty(this, 'status', { value: 200 });
+                        Object.defineProperty(this, 'response', { value: response });
+                        Object.defineProperty(this, 'responseText', { value: response });
+                        this.dispatchEvent(new Event('load'));
+                    }, 10);
+                };
+            }
         });
     </script>
 </body>
