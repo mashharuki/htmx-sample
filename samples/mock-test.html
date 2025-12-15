@@ -34,6 +34,7 @@
                     setTimeout(() => {
                         // Mock response properties
                         Object.defineProperty(xhr, 'status', { value: 200 });
+                        // レスポンスデータ
                         Object.defineProperty(xhr, 'responseText', { value: '<p>This is mocked content!</p>' });
                         Object.defineProperty(xhr, 'response', { value: '<p>This is mocked content!</p>' });
                         
