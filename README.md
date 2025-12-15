@@ -5,7 +5,8 @@ htmxを学習するための日本語サンプルリポジトリ 🚀
 ## 📚 はじめに
 
 このリポジトリは、**htmx初心者**の方がスムーズに学習を始められるように作成されたオンボーディング教材です。
-実際に動かせるサンプルアプリケーションと、分かりやすい日本語のドキュメントを用意しています。
+
+実際に動かせるサンプルアプリケーションと分かりやすい日本語のドキュメントを用意しています。
 
 ## 🎯 htmxとは？
 
@@ -29,17 +30,19 @@ cd htmx-sample
 ### 2. サンプルを起動
 
 #### Pythonを使う場合:
+
 ```bash
 cd samples/01-basic
 python -m http.server 8000
 ```
 
 #### Node.jsを使う場合:
+
 ```bash
 # http-serverをインストール（初回のみ）
 npm install -g http-server
 
-cd samples/01-basic
+cd samples/01-basic/counter.html
 http-server -p 8000
 ```
 
