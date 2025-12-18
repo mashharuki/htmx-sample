@@ -239,52 +239,86 @@
             `;
         }
         
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.preventDefault();
-            const url = new URL(event.detail.path, window.location.href);
-            const path = url.pathname;
-            const method = event.detail.verb.toUpperCase();
-            let response = '';
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // パスとメソッドを取得
+            const path = event.detail.requestConfig.path;
+            const verb = event.detail.requestConfig.verb; // htmx uses verb in requestConfig
+            // Note: In htmx 1.x, verb might be lower case.
+            const method = verb.toUpperCase();
             
-            // POST: TODO追加
-            if (method === 'POST' && path === '/api/todos') {
-                const text = event.detail.parameters.text;
-                const todo = { id: nextId++, text, completed: false };
-                todos.push(todo);
-                response = createTodoHtml(todo);
-                
-                // フォームをリセット
-                setTimeout(() => {
-                    document.querySelector('.add-todo input').value = '';
-                }, 100);
-            }
-            // PUT: TODO完了状態切り替え
-            else if (method === 'PUT' && path.includes('/toggle')) {
-                const id = parseInt(path.match(/\/todos\/(\d+)/)[1]);
-                const todo = todos.find(t => t.id === id);
-                if (todo) {
-                    todo.completed = !todo.completed;
+            // APIエンドポイントか確認
+            if (path.startsWith('/api/todos')) {
+                let response = '';
+                let shouldMock = false;
+
+                // POST: TODO追加
+                if (method === 'POST' && path === '/api/todos') {
+                    shouldMock = true;
+                    const text = event.detail.requestConfig.parameters.text;
+                    const todo = { id: nextId++, text, completed: false };
+                    todos.push(todo);
                     response = createTodoHtml(todo);
+                    
+                    // フォームをリセット
+                    setTimeout(() => {
+                        const input = document.querySelector('.add-todo input');
+                        if (input) input.value = '';
+                    }, 100);
+                }
+                // PUT: TODO完了状態切り替え
+                else if (method === 'PUT' && path.includes('/toggle')) {
+                    shouldMock = true;
+                    const match = path.match(/\/todos\/(\d+)/);
+                    if (match) {
+                        const id = parseInt(match[1]);
+                        const todo = todos.find(t => t.id === id);
+                        if (todo) {
+                            todo.completed = !todo.completed;
+                            response = createTodoHtml(todo);
+                        }
+                    }
+                }
+                // DELETE: TODO削除
+                else if (method === 'DELETE') {
+                     shouldMock = true;
+                     const match = path.match(/\/todos\/(\d+)/);
+                     if (match) {
+                        const id = parseInt(match[1]);
+                        todos = todos.filter(t => t.id !== id);
+                        response = ''; // 削除時は空を返す（要素が消える）
+                     }
+                }
+
+                if (shouldMock) {
+                    // XHRオブジェクトを取得
+                    const xhr = event.detail.xhr;
+                    
+                    // sendメソッドを上書き
+                    xhr.send = function() {
+                        console.log(`Mocking ${method} request to ${path}`);
+                        
+                        setTimeout(() => {
+                            // ステータスとレスポンスを設定
+                            Object.defineProperty(xhr, 'readyState', { value: 4 });
+                            Object.defineProperty(xhr, 'status', { value: 200 });
+                            Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                            Object.defineProperty(xhr, 'response', { value: response });
+                            Object.defineProperty(xhr, 'responseText', { value: response });
+                            
+                            // ヘッダー取得メソッドをモック
+                            xhr.getResponseHeader = function(header) {
+                                if (header.toLowerCase() === 'content-type') return 'text/html';
+                                return null;
+                            };
+                            
+                            xhr.dispatchEvent(new Event('load'));
+                            
+                            // 統計を更新
+                            updateStats();
+                        }, 100);
+                    };
                 }
             }
-            // DELETE: TODO削除
-            else if (method === 'DELETE' && path.includes('/todos/')) {
-                const id = parseInt(path.match(/\/todos\/(\d+)/)[1]);
-                todos = todos.filter(t => t.id !== id);
-                response = ''; // 削除時は空を返す（要素が消える）
-            }
-            
-            // レスポンスを返す
-            setTimeout(() => {
-                event.detail.xhr.addEventListener('load', function() {
-                    Object.defineProperty(this, 'response', { value: response });
-                    Object.defineProperty(this, 'responseText', { value: response });
-                });
-                event.detail.xhr.dispatchEvent(new Event('load'));
-                
-                // 統計を更新
-                updateStats();
-            }, 100);
         });
     </script>
 </body>

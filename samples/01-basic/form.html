@@ -65,6 +65,8 @@
             margin-top: 20px;
             padding: 15px;
             border-radius: 5px;
+        }
+        #response:empty {
             display: none;
         }
         .success {
@@ -158,14 +160,11 @@
 
     <!-- モックAPIサーバー（学習用） -->
     <script>
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            const path = new URL(event.detail.path, window.location.href).pathname;
-            
-            if (path === '/api/submit') {
-                event.preventDefault();
-                
-                // フォームデータを取得
-                const formData = event.detail.parameters;
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // パスが/api/submitの場合にリクエストをモック
+            if (event.detail.requestConfig.path === '/api/submit') {
+                // フォームデータを取得 (htmx:beforeSendではrequestConfig.parametersにあります)
+                const formData = event.detail.requestConfig.parameters;
                 
                 // レスポンスHTMLを作成
                 const response = `
@@ -181,11 +180,34 @@
                     </div>
                 `;
                 
-                // レスポンスを返す
-                event.detail.xhr.addEventListener('load', function() {
-                    Object.defineProperty(this, 'response', { value: response });
-                    Object.defineProperty(this, 'responseText', { value: response });
-                });
+                // XHRオブジェクトを取得
+                const xhr = event.detail.xhr;
+                
+                // sendメソッドを上書きしてリクエスト送信を防止し、モックレスポンスを返す
+                xhr.send = function() {
+                    console.log('Mocking request to /api/submit');
+                    
+                    // ネットワーク遅延をシミュレート
+                    setTimeout(() => {
+                        // ステータスとレスポンスを含めた完全なXHRプロパティを模倣
+                        Object.defineProperty(xhr, 'readyState', { value: 4 });
+                        Object.defineProperty(xhr, 'status', { value: 200 });
+                        Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                        Object.defineProperty(xhr, 'response', { value: response });
+                        Object.defineProperty(xhr, 'responseText', { value: response });
+                        
+                        console.log('response', response);
+                    
+                        // ヘッダー取得メソッドをモック
+                        xhr.getResponseHeader = function(header) {
+                            if (header.toLowerCase() === 'content-type') return 'text/html';
+                            return null;
+                        };
+                        
+                        // loadイベントを発火させてhtmxにレスポンス処理を行わせる
+                        xhr.dispatchEvent(new Event('load'));
+                    }, 400);
+                };
             }
         });
     </script>

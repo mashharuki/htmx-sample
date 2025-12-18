@@ -160,14 +160,11 @@
             { title: 'サーバーサイド連携', desc: 'htmxはどんなバックエンド言語とも組み合わせ可能です。' },
         ];
         
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            const path = new URL(event.detail.path, window.location.href).pathname;
-            
-            if (path === '/api/search') {
-                event.preventDefault();
-                
-                // 検索クエリを取得
-                const query = event.detail.parameters.q || '';
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // パスが/api/searchの場合にリクエストをモック
+            if (event.detail.requestConfig.path === '/api/search') {
+                // 検索クエリを取得 (GETパラメータ)
+                const query = event.detail.requestConfig.parameters.q || '';
                 
                 let response;
                 
@@ -201,16 +198,32 @@
                     }
                 }
                 
-                // 実際のAPIのような遅延をシミュレート
-                setTimeout(() => {
-                    event.detail.xhr.addEventListener('load', function() {
-                        Object.defineProperty(this, 'response', { value: response });
-                        Object.defineProperty(this, 'responseText', { value: response });
-                    });
+                // XHRオブジェクトを取得
+                const xhr = event.detail.xhr;
+
+                // sendメソッドを上書きしてリクエスト送信を防止し、モックレスポンスを返す
+                xhr.send = function() {
+                    console.log('Mocking request to /api/search');
                     
-                    // リクエスト完了イベントを発火
-                    event.detail.xhr.dispatchEvent(new Event('load'));
-                }, 300);
+                    // 実際のAPIのような遅延をシミュレート
+                    setTimeout(() => {
+                        // ステータスとレスポンスを設定
+                        Object.defineProperty(xhr, 'readyState', { value: 4 });
+                        Object.defineProperty(xhr, 'status', { value: 200 });
+                        Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                        Object.defineProperty(xhr, 'response', { value: response });
+                        Object.defineProperty(xhr, 'responseText', { value: response });
+                        
+                        // ヘッダー取得メソッドをモック
+                        xhr.getResponseHeader = function(header) {
+                            if (header.toLowerCase() === 'content-type') return 'text/html';
+                            return null;
+                        };
+                        
+                        // loadイベントを発火させてhtmxにレスポンス処理を行わせる
+                        xhr.dispatchEvent(new Event('load'));
+                    }, 300);
+                };
             }
         });
     </script>

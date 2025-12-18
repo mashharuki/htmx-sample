@@ -284,22 +284,40 @@
         };
         
         // モックAPIサーバー
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.preventDefault();
-            const path = new URL(event.detail.path, window.location.href).pathname;
+        // モックAPIサーバー
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // リクエストパスを確認
+            const path = event.detail.requestConfig.path;
             const match = path.match(/\/api\/tabs\/(\w+)/);
             
             if (match) {
                 const tabName = match[1];
                 const response = tabContents[tabName] || '<p>コンテンツが見つかりません</p>';
                 
-                setTimeout(() => {
-                    event.detail.xhr.addEventListener('load', function() {
-                        Object.defineProperty(this, 'response', { value: response });
-                        Object.defineProperty(this, 'responseText', { value: response });
-                    });
-                    event.detail.xhr.dispatchEvent(new Event('load'));
-                }, 200);
+                // XHRオブジェクトを取得
+                const xhr = event.detail.xhr;
+                
+                // sendメソッドを上書き
+                xhr.send = function() {
+                    console.log(`Mocking request to /api/tabs/${tabName}`);
+                    
+                    setTimeout(() => {
+                        // ステータスとレスポンスを含めた完全なXHRプロパティを模倣
+                        Object.defineProperty(xhr, 'readyState', { value: 4 });
+                        Object.defineProperty(xhr, 'status', { value: 200 });
+                        Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                        Object.defineProperty(xhr, 'response', { value: response });
+                        Object.defineProperty(xhr, 'responseText', { value: response });
+                        
+                        // ヘッダー取得メソッドをモック
+                        xhr.getResponseHeader = function(header) {
+                            if (header.toLowerCase() === 'content-type') return 'text/html';
+                            return null;
+                        };
+                        
+                        xhr.dispatchEvent(new Event('load'));
+                    }, 200);
+                };
             }
         });
     </script>

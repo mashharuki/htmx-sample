@@ -233,23 +233,49 @@
         });
         
         // モックAPIサーバー
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.preventDefault();
-            const url = new URL(event.detail.path, window.location.href);
-            const page = parseInt(url.searchParams.get('page')) || 1;
-            
-            // APIレスポンスをシミュレート（少し遅延を入れる）
-            setTimeout(() => {
-                const response = createArticlesHtml(page);
-                currentPage = page;
-                updatePageIndicator();
+        // モックAPIサーバー
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // リクエストパスを確認
+            // 注意: URLオブジェクトを作る際はベースURLが必要
+            const requestPath = event.detail.requestConfig.path.split('?')[0];
+
+            if (requestPath === '/api/articles') {
+                // クエリパラメータを取得
+                const params = event.detail.requestConfig.parameters;
+                const page = parseInt(params.page) || 1;
                 
-                event.detail.xhr.addEventListener('load', function() {
-                    Object.defineProperty(this, 'response', { value: response });
-                    Object.defineProperty(this, 'responseText', { value: response });
-                });
-                event.detail.xhr.dispatchEvent(new Event('load'));
-            }, 800);
+                // APIレスポンスを生成
+                const response = createArticlesHtml(page);
+                
+                // XHRオブジェクトを取得
+                const xhr = event.detail.xhr;
+                
+                // sendメソッドを上書き
+                xhr.send = function() {
+                    console.log(`Mocking request to /api/articles (page ${page})`);
+                    
+                    // APIレスポンスをシミュレート（少し遅延を入れる）
+                    setTimeout(() => {
+                        currentPage = page;
+                        updatePageIndicator();
+                        
+                        // ステータスとレスポンスを設定
+                        Object.defineProperty(xhr, 'readyState', { value: 4 });
+                        Object.defineProperty(xhr, 'status', { value: 200 });
+                        Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                        Object.defineProperty(xhr, 'response', { value: response });
+                        Object.defineProperty(xhr, 'responseText', { value: response });
+                        
+                        // ヘッダー取得メソッドをモック
+                        xhr.getResponseHeader = function(header) {
+                            if (header.toLowerCase() === 'content-type') return 'text/html';
+                            return null;
+                        };
+                        
+                        xhr.dispatchEvent(new Event('load'));
+                    }, 800);
+                };
+            }
         });
     </script>
 </body>

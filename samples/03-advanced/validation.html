@@ -272,74 +272,104 @@
         }
         
         // モックAPIサーバー
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.preventDefault();
-            const url = new URL(event.detail.path, window.location.href);
-            const path = url.pathname;
-            let response = '';
+        document.body.addEventListener('htmx:beforeSend', (event) => {
+            // パスを取得
+            const path = event.detail.requestConfig.path;
             
-            if (path === '/api/validate/username') {
-                const username = event.detail.parameters.username;
-                const result = validateUsername(username);
-                validationState.username = result.valid;
-                response = createValidationHtml(result, 'username');
-            }
-            else if (path === '/api/validate/email') {
-                const email = event.detail.parameters.email;
-                const result = validateEmail(email);
-                validationState.email = result.valid;
-                response = createValidationHtml(result, 'email');
-            }
-            else if (path === '/api/validate/password') {
-                const password = event.detail.parameters.password;
-                const result = validatePassword(password);
-                validationState.password = result.valid;
-                response = createValidationHtml(result, 'password');
-            }
-            else if (path === '/api/validate/password-confirm') {
-                const password = document.getElementById('password').value;
-                const confirm = event.detail.parameters.password_confirm;
-                const result = validatePasswordConfirm(password, confirm);
-                validationState.passwordConfirm = result.valid;
-                response = createValidationHtml(result, 'password-confirm');
-            }
-            else if (path === '/api/submit') {
-                // すべてのバリデーションが通っているかチェック
-                const allValid = Object.values(validationState).every(v => v);
-                
-                if (allValid) {
-                    response = `
-                        <div class="success-banner">
-                            <h2>🎉 登録完了！</h2>
-                            <p>ユーザー名: ${event.detail.parameters.username}</p>
-                            <p>メールアドレス: ${event.detail.parameters.email}</p>
-                            <p>アカウントが正常に作成されました。</p>
-                        </div>
-                    `;
+            // APIエンドポイントか確認
+            if (path.startsWith('/api/')) {
+                let response = '';
+                let shouldMock = false;
+
+                if (path === '/api/validate/username') {
+                    shouldMock = true;
+                    // POSTパラメータは requestConfig.parameters にある
+                    const username = event.detail.requestConfig.parameters.username;
+                    const result = validateUsername(username);
+                    validationState.username = result.valid;
+                    response = createValidationHtml(result, 'username');
+                }
+                else if (path === '/api/validate/email') {
+                    shouldMock = true;
+                    const email = event.detail.requestConfig.parameters.email;
+                    const result = validateEmail(email);
+                    validationState.email = result.valid;
+                    response = createValidationHtml(result, 'email');
+                }
+                else if (path === '/api/validate/password') {
+                    shouldMock = true;
+                    const password = event.detail.requestConfig.parameters.password;
+                    const result = validatePassword(password);
+                    validationState.password = result.valid;
+                    response = createValidationHtml(result, 'password');
+                }
+                else if (path === '/api/validate/password-confirm') {
+                    shouldMock = true;
+                    const password = document.getElementById('password').value;
+                    const confirm = event.detail.requestConfig.parameters.password_confirm;
+                    const result = validatePasswordConfirm(password, confirm);
+                    validationState.passwordConfirm = result.valid;
+                    response = createValidationHtml(result, 'password-confirm');
+                }
+                else if (path === '/api/submit') {
+                    shouldMock = true;
+                    // すべてのバリデーションが通っているかチェック
+                    const allValid = Object.values(validationState).every(v => v);
                     
-                    // フォームをリセット
-                    setTimeout(() => {
-                        document.getElementById('signup-form').reset();
-                        document.querySelectorAll('input').forEach(input => {
-                            input.className = '';
-                        });
-                    }, 2000);
-                } else {
-                    response = `
-                        <div class="error-message" style="text-align: center; padding: 15px;">
-                            ❌ すべての項目を正しく入力してください
-                        </div>
-                    `;
+                    if (allValid) {
+                        response = `
+                            <div class="success-banner">
+                                <h2>🎉 登録完了！</h2>
+                                <p>ユーザー名: ${event.detail.requestConfig.parameters.username}</p>
+                                <p>メールアドレス: ${event.detail.requestConfig.parameters.email}</p>
+                                <p>アカウントが正常に作成されました。</p>
+                            </div>
+                        `;
+                        
+                        // フォームをリセット
+                        setTimeout(() => {
+                            const form = document.getElementById('signup-form');
+                            if(form) form.reset();
+                            document.querySelectorAll('input').forEach(input => {
+                                input.className = '';
+                            });
+                        }, 2000);
+                    } else {
+                        response = `
+                            <div class="error-message" style="text-align: center; padding: 15px;">
+                                ❌ すべての項目を正しく入力してください
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (shouldMock) {
+                     // XHRオブジェクトを取得
+                    const xhr = event.detail.xhr;
+                    
+                    // sendメソッドを上書き
+                    xhr.send = function() {
+                        console.log(`Mocking request to ${path}`);
+                        
+                        setTimeout(() => {
+                            // ステータスとレスポンスを設定
+                            Object.defineProperty(xhr, 'readyState', { value: 4 });
+                            Object.defineProperty(xhr, 'status', { value: 200 });
+                            Object.defineProperty(xhr, 'statusText', { value: 'OK' });
+                            Object.defineProperty(xhr, 'response', { value: response });
+                            Object.defineProperty(xhr, 'responseText', { value: response });
+                            
+                            // ヘッダー取得メソッドをモック
+                            xhr.getResponseHeader = function(header) {
+                                if (header.toLowerCase() === 'content-type') return 'text/html';
+                                return null;
+                            };
+                            
+                            xhr.dispatchEvent(new Event('load'));
+                        }, 200);
+                    };
                 }
             }
-            
-            setTimeout(() => {
-                event.detail.xhr.addEventListener('load', function() {
-                    Object.defineProperty(this, 'response', { value: response });
-                    Object.defineProperty(this, 'responseText', { value: response });
-                });
-                event.detail.xhr.dispatchEvent(new Event('load'));
-            }, 200);
         });
     </script>
 </body>
